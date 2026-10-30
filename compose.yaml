@@ -1,0 +1,14 @@
+services:
+  airflow:
+    build: .
+    command: standalone
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+    volumes:
+      - airflow-state:/opt/airflow
+    restart: unless-stopped
+
+volumes:
+  airflow-state:
