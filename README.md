@@ -1,6 +1,16 @@
 # 세모-세종대학교의 모든 것
 > 제 11회 SWAI 해커톤 은상 수상작(코드 복구)
 
+## 기술 스택
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6F00?style=flat-square)
+![Airflow](https://img.shields.io/badge/Airflow-017CEE?style=flat-square&logo=apacheairflow&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=flat-square&logo=langchain&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat-square&logo=redis&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white)
+
 ## 개요
 세종대학교와 관련된 파편화된 정보를 모아 RAG기반의 챗봇으로 응답을 제공하는 서비스입니다.
 
@@ -27,3 +37,4 @@
     - 이를 통해, 학생들이 연구에 보다 쉽게 접근할 수 있도록 하고 교내 연구력 향상에 기여할 예정입니다.
 
 2. 세종대 이외에도 다양한 학교를 대상으로 서비스해볼 예정입니다.
+
