@@ -24,6 +24,8 @@ daily_collect.py / Airflow DAG / probe.py
 | `semo/indexing.py` | 청크 구성·변경 감지·벡터 동기화 | 청크 정책·색인 갱신 정책 변경 |
 | `semo/adapters/embeddings.py` | OpenAI 임베딩 요청·입력/응답 확인 | 임베딩 모델·제공자 변경 |
 | `semo/adapters/chroma.py` | ChromaDB 저장·삭제·검색 | 벡터 저장소 변경 |
+| `semo/answering.py` | 출처 묶기·문장별 인용 검증·답변 보류 | 근거와 인용 정책 변경 |
+| `semo/adapters/answers.py` | OpenAI 구조화 답변 생성 | 답변 모델·프롬프트 변경 |
 | `semo/index_cli.py` | PostgreSQL·임베딩·벡터 구현 연결 | 색인 실행·검색 옵션 변경 |
 
 `probe.py`는 접근성 검증 도구입니다. 운영 수집 코드가 이 도구를 import하지 않습니다. 공통 파서와 HTTP 구현은 패키지 안에 한 번만 둡니다. Airflow는 기존 CLI를 실행하며 수집 규칙을 중복 구현하지 않습니다.
@@ -48,3 +50,5 @@ daily_collect.py / Airflow DAG / probe.py
 PostgreSQL과 JSON은 하나의 원자적 트랜잭션이 아닙니다. DB 커밋 뒤 JSON 내보내기가 실패하면 작업을 다시 실행해야 합니다. 원문에서 삭제된 공지의 판별과 재확인 범위는 다음 기능 작업에서 정해야 합니다.
 
 벡터 동기화는 `VectorIndex`와 임베딩 callable을 주입받습니다. Chroma/OpenAI SDK는 adapter에만 있으며, 원문 저장소의 `DocumentRepository` interface는 그대로 유지합니다. PostgreSQL에서 사라진 문서의 청크는 색인 동기화가 끝날 때 제거합니다. 동기화 상세와 실행 제한은 [CHROMA.md](CHROMA.md)를 참고하세요.
+
+답변 생성은 모델 callable을 전달받고, 실제 검색 결과에 존재하는 출처 번호만 인용으로 변환합니다. 원문 URL은 모델이 생성하지 않고 저장된 메타데이터에서 가져옵니다. 모델의 사실 판단은 여전히 오류 가능성이 있으며 인용 유효성 검증이 사실 정확성을 보장하지는 않습니다. 현재 기본 날짜 필터는 종료일이 확인된 학사일정에만 적용합니다.
