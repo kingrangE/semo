@@ -1,6 +1,7 @@
 """Chroma HTTP adapter; embeddings are supplied explicitly."""
 
 import chromadb
+from datetime import date
 
 from semo.indexing import INDEX_VERSION
 
@@ -31,13 +32,29 @@ class ChromaVectorIndex:
     def delete(self, ids: list[str]) -> None:
         self.collection.delete(ids=ids)
 
-    def search(self, embedding: list[float]) -> list[dict]:
+    def search(
+        self, embedding: list[float], reference_date: date | None = None
+    ) -> list[dict]:
         count = self.collection.count()
         if not count:
             return []
+        where = None
+        if reference_date is not None:
+            where = {
+                "$or": [
+                    {"kind": "notice"},
+                    {
+                        "$and": [
+                            {"kind": "calendar"},
+                            {"end_day": {"$gte": reference_date.toordinal()}},
+                        ]
+                    },
+                ]
+            }
         result = self.collection.query(
             query_embeddings=[embedding],
             n_results=min(15, count),
+            where=where,
             include=["documents", "metadatas", "distances"],
         )
         candidates = [

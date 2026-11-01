@@ -4,6 +4,8 @@ import argparse
 import json
 import os
 from pathlib import Path
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from semo.adapters.storage import PostgresDocumentRepository
 from semo.domain import normalize
@@ -13,7 +15,11 @@ from semo.indexing import synchronize
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--query", help="Search source chunks instead of indexing")
+    parser.add_argument("--on", type=date.fromisoformat, help="Reference date; defaults to today in Asia/Seoul")
+    parser.add_argument("--history", action="store_true", help="Include past calendar events")
     args = parser.parse_args()
+    if (args.on or args.history) and args.query is None:
+        parser.error("--on/--history requires --query")
     if args.query is not None and not normalize(args.query):
         parser.error("Question must not be empty")
     if not os.environ.get("OPENAI_API_KEY"):
@@ -26,7 +32,8 @@ def main():
     embed = OpenAIEmbedder()
     index = ChromaVectorIndex(os.environ.get("CHROMA_HOST", "localhost"), int(os.environ.get("CHROMA_PORT", "8000")))
     if args.query is not None:
-        result = index.search(embed([normalize(args.query)])[0])
+        reference = args.on or datetime.now(ZoneInfo("Asia/Seoul")).date()
+        result = index.search(embed([normalize(args.query)])[0], reference_date=None if args.history else reference)
     else:
         repository = PostgresDocumentRepository(os.environ["DATABASE_URL"], Path(os.environ.get("SEMO_DATA_DIR", "artifacts/daily")))
         result = synchronize(repository.load(), index, embed)
