@@ -6,7 +6,6 @@ from unittest.mock import Mock, patch
 
 from semo.adapters.http import SnapshotReader, network_reader
 from semo.adapters.sejong import NoticeSource
-from semo.adapters.storage import SqliteDocumentRepository
 from semo.application import DocumentRepository, MissingSnapshot, collect
 from semo.domain import CollectionBatch
 
@@ -98,24 +97,6 @@ class BoundaryTests(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             NoticeSource(sample_only=True).read(broken, [])
-
-    def test_repository_rolls_back_failed_snapshot_replacement(self):
-        document = {"id": "calendar:1", "kind": "calendar", "content_hash": "original"}
-        with tempfile.TemporaryDirectory() as folder:
-            repository = SqliteDocumentRepository(Path(folder))
-            repository.save(
-                CollectionBatch([document], replace_kinds={"calendar"}), "before", False
-            )
-            before = (Path(folder) / "documents.json").read_bytes()
-            with self.assertRaises(KeyError):
-                repository.save(
-                    CollectionBatch([{"id": "invalid"}], replace_kinds={"calendar"}),
-                    "after",
-                    False,
-                )
-            self.assertEqual(repository.load()[0]["content_hash"], "original")
-            self.assertEqual((Path(folder) / "documents.json").read_bytes(), before)
-            self.assertNotIn("checked_at", document)
 
 
 if __name__ == "__main__":

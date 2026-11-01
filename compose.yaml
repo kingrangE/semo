@@ -1,4 +1,19 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: semo
+      POSTGRES_USER: semo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U semo -d semo"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
   airflow:
     build: .
     command: standalone
@@ -6,9 +21,15 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      DATABASE_URL: postgresql://semo@postgres:5432/semo
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
     volumes:
       - airflow-state:/opt/airflow
     restart: unless-stopped
 
 volumes:
   airflow-state:
+  postgres-data:

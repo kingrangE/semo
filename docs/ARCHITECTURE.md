@@ -18,7 +18,7 @@ daily_collect.py / Airflow DAG / probe.py
 | `semo/application.py` | 수집원 실행, 모두 성공한 후 저장, 의존성 interface | 수집 실행 순서·정책 변경 |
 | `semo/adapters/sejong.py` | 세종대 URL·HTML 파싱·기존 공지 재확인 | 사이트 구조나 대상 게시판 변경 |
 | `semo/adapters/http.py` | HTTP·robots·호출 간격, 저장된 HTML 읽기 | HTTP 도구 교체·샘플 읽기 변경 |
-| `semo/adapters/storage.py` | SQLite 트랜잭션·변경 비교·JSON 내보내기 | 저장 방식 변경 |
+| `semo/adapters/storage.py` | PostgreSQL 트랜잭션·변경 비교·JSON 내보내기 | 저장 방식 변경 |
 | `semo/cli.py` | 인자 처리·구체적인 구현 선택·현재 시각 전달 | 실행 옵션이나 구현 연결 변경 |
 
 `probe.py`는 접근성 검증 도구입니다. 운영 수집 코드가 이 도구를 import하지 않습니다. 공통 파서와 HTTP 구현은 패키지 안에 한 번만 둡니다. Airflow는 기존 CLI를 실행하며 수집 규칙을 중복 구현하지 않습니다.
@@ -34,10 +34,10 @@ daily_collect.py / Airflow DAG / probe.py
 - `replace_kinds`는 완전한 스냅샷을 받은 문서 종류만 지정합니다. 현재 학사일정은 전체 교체하고 공지는 누적 갱신합니다. 새 수집원은 자체 kind를 사용해야 다른 자료를 지우지 않습니다.
 - 누락된 오프라인 파일은 `MissingSnapshot`입니다. 샘플 실행에서 이 오류만 생략하고 일반 `KeyError`나 파싱 오류는 실패로 전달합니다.
 
-**저장소**는 `DocumentRepository.load()`와 `save(batch, checked_at, sample_only)`를 구현합니다. 수집 흐름은 SQLite·파일 경로를 직접 다루지 않습니다. 기존 SQLite 스키마·문서 ID·해시·JSON 형식은 유지해 데이터 이전이 필요하지 않습니다.
+**저장소**는 `DocumentRepository.load()`와 `save(batch, checked_at, sample_only)`를 구현합니다. 수집 흐름은 PostgreSQL·파일 경로를 직접 다루지 않습니다. 문서 ID·해시·JSON export 형식은 유지합니다. 기존 자료는 JSON export로 PostgreSQL에 가져올 수 있습니다. 설정과 이전 절차는 [POSTGRES.md](POSTGRES.md)를 참고하세요.
 
 ## 검증과 남은 제약
 
-네트워크·파일 없이 수집원의 조합과 실패 시 저장하지 않는 동작을 테스트합니다. SQLite 테스트는 재실행·수정 반영·스냅샷 교체 실패의 롤백을 확인합니다. 별도 HTTP 테스트는 robots와 호출 간격을 확인합니다. 실제 HTML 54건은 변경 전후 내용과 해시까지 비교했습니다.
+네트워크·파일 없이 수집원의 조합과 실패 시 저장하지 않는 동작을 테스트합니다. PostgreSQL 통합 테스트는 재실행·수정 반영·스냅샷 교체 실패의 롤백을 확인합니다. 별도 HTTP 테스트는 robots와 호출 간격을 확인합니다. 실제 HTML 54건은 변경 전후 내용과 해시까지 비교했습니다.
 
-SQLite와 JSON은 하나의 원자적 트랜잭션이 아닙니다. DB 커밋 뒤 JSON 내보내기가 실패하면 작업을 다시 실행해야 합니다. 기존 공지 전체 재확인, 삭제 공지 처리, 이미지 분석, ChromaDB 연결은 이 구조 변경에서 기능을 추가하지 않았습니다. 운영에서의 삭제 처리와 재확인 범위는 다음 기능 작업에서 정해야 합니다.
+PostgreSQL과 JSON은 하나의 원자적 트랜잭션이 아닙니다. DB 커밋 뒤 JSON 내보내기가 실패하면 작업을 다시 실행해야 합니다. 원문에서 삭제된 공지의 판별과 재확인 범위는 다음 기능 작업에서 정해야 합니다.
