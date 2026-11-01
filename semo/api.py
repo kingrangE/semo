@@ -1,14 +1,17 @@
-"""HTTP adapter for source-grounded answers. No conversation content is persisted."""
+"""HTTP adapter and local chat page. No conversation content is persisted."""
 
 import logging
 import os
 from datetime import date, datetime
 from functools import lru_cache
+from pathlib import Path
 from threading import BoundedSemaphore
 from typing import Annotated
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from openai import APITimeoutError, RateLimitError
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
@@ -16,6 +19,8 @@ from semo.chat import MAX_QUESTION_CHARS, InvalidQuestion, SearchIndexEmpty
 from semo.runtime import create_chat
 
 app = FastAPI(title="세모 API", version="0.1.0")
+web = Path(__file__).with_name("web")
+app.mount("/static", StaticFiles(directory=web), name="static")
 get_chat = lru_cache(maxsize=1)(create_chat)
 # shortcut: per-process concurrency limit, add shared quotas before public deployment.
 requests = BoundedSemaphore(2)
@@ -47,6 +52,11 @@ class ChatResponse(BaseModel):
     reason: str | None
     generation_used: bool
     model: str
+
+
+@app.get("/", include_in_schema=False)
+def home():
+    return FileResponse(web / "index.html")
 
 
 @app.get("/health")

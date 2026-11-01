@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#9c233d">
+  <title>세모 — 세종대학교의 모든 것</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#question">질문 입력으로 이동</a>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="세모 홈"><span class="brand-mark" aria-hidden="true">△</span> 세모<span class="brand-dot">.</span></a>
+    <p class="brand-caption">세종대학교의 모든 것</p>
+    <div class="sidebar-heading">학교생활, 한곳에서</div>
+    <div class="selected-menu"><span aria-hidden="true">✧</span> 세모에게 질문하기</div>
+    <nav aria-label="공식 자료 바로가기">
+      <span class="sidebar-heading">공식 자료</span>
+      <a href="https://www.sejong.ac.kr/kor/academics/academic-calendar.do" target="_blank" rel="noopener noreferrer">학사일정 <span aria-hidden="true">↗</span></a>
+      <a href="https://www.sejong.ac.kr/kor/intro/notice3.do" target="_blank" rel="noopener noreferrer">학사공지 <span aria-hidden="true">↗</span></a>
+      <a href="https://www.sejong.ac.kr/kor/intro/notice1.do" target="_blank" rel="noopener noreferrer">일반공지 <span aria-hidden="true">↗</span></a>
+    </nav>
+    <div class="sidebar-footer"><span class="small-triangle" aria-hidden="true">△</span><p>흩어진 학교 소식,<br>필요한 순간에 가까이.</p><small>현재 학사일정과 공개 공지를 안내해요.</small></div>
+  </aside>
+  <main>
+    <header class="topbar"><span class="eyebrow">SEJONG UNIVERSITY GUIDE</span><button id="clear" class="text-button" type="button">대화 지우기</button></header>
+    <div class="conversation">
+      <section id="welcome" class="welcome" aria-labelledby="welcome-title">
+        <span class="pill">공식 자료를 바탕으로 답해요</span>
+        <h1 id="welcome-title">학교생활,<br>궁금한 건 <span>세모에게.</span></h1>
+        <p class="intro">신청 기간부터 준비해야 할 서류까지.<br>질문하면 필요한 내용을 출처와 함께 알려드릴게요.</p>
+        <div class="suggestions" aria-label="질문 예시">
+          <button type="button" data-question="복수전공 신청 기간과 신청 방법을 알려줘"><span class="suggestion-label">전공 설계</span>복수전공, 언제 신청하나요?<span aria-hidden="true">↗</span></button>
+          <button type="button" data-question="앞으로 다가오는 주요 학사일정을 알려줘"><span class="suggestion-label">학사일정</span>다가오는 일정이 궁금해요<span aria-hidden="true">↗</span></button>
+          <button type="button" data-question="영어졸업인증 신청 방법과 필요한 서류를 알려줘"><span class="suggestion-label">졸업 준비</span>영어졸업인증은 어떻게 하나요?<span aria-hidden="true">↗</span></button>
+        </div>
+      </section>
+      <section id="messages" class="messages" role="log" aria-live="polite" aria-label="질문과 답변"></section>
+    </div>
+    <div class="composer-wrap">
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <form id="chat-form" class="composer">
+        <label for="question" class="sr-only">세모에게 질문하기</label>
+        <textarea id="question" name="question" rows="2" maxlength="1000" required placeholder="궁금한 내용을 적어주세요. 학기와 대상을 함께 적으면 더 좋아요." aria-describedby="input-help"></textarea>
+        <div class="composer-bottom"><label class="history-option"><input id="history" type="checkbox"> 지난 학사일정도 포함</label><button id="send" type="submit">질문하기 <span aria-hidden="true">↑</span></button></div>
+      </form>
+      <p id="input-help" class="input-help">질문은 각각 독립적으로 답해요. 중요한 신청 정보는 연결된 원문에서도 확인해 주세요.</p>
+    </div>
+  </main>
+</body>
+</html>

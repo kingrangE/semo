@@ -11,6 +11,10 @@
 ![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat-square&logo=redis&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-5FA04E?style=flat-square&logo=nodedotjs&logoColor=white)
 
+## 실행
+
+기존 `.env` 설정과 ChromaDB v2 색인을 준비한 뒤 `docker compose up --build -d api`를 실행하면 **http://localhost:8001**에서 질문할 수 있습니다. 웹·API 사용법은 [WEB.md](docs/WEB.md), 데이터 수집과 검색은 [CHROMA.md](docs/CHROMA.md)를 참고하세요.
+
 ## 개요
 세종대학교와 관련된 파편화된 정보를 모아 RAG기반의 챗봇으로 응답을 제공하는 서비스입니다.
 
