@@ -45,6 +45,18 @@ def main():
     if question is None and not args.status and not os.environ.get("DATABASE_URL"):
         parser.error("DATABASE_URL is required for PostgreSQL indexing")
 
+    if args.answer is not None:
+        from semo.chat import InvalidQuestion
+        from semo.runtime import create_chat
+
+        reference = args.on or datetime.now(ZoneInfo("Asia/Seoul")).date()
+        try:
+            result = create_chat().reply(question, reference, args.history)
+        except InvalidQuestion as error:
+            parser.error(str(error))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+
     from semo.adapters.chroma import COLLECTION, ChromaVectorIndex
 
     index = ChromaVectorIndex(
@@ -68,15 +80,7 @@ def main():
             embed([normalize(question)])[0],
             reference_date=None if args.history else reference,
         )
-        if args.answer is not None:
-            from semo.answering import answer
-            from semo.adapters.answers import OpenAIAnswerer
-
-            model = os.environ.get("OPENAI_CHAT_MODEL") or "gpt-6-luna"
-            result = answer(question, hits, reference, OpenAIAnswerer(model))
-            result["model"] = model
-        else:
-            result = hits
+        result = hits
     else:
         repository = PostgresDocumentRepository(
             os.environ["DATABASE_URL"],

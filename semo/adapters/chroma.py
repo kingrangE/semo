@@ -4,6 +4,7 @@ import chromadb
 from datetime import date
 
 from semo.indexing import INDEX_VERSION
+from semo.chat import SearchIndexEmpty
 
 COLLECTION = f"semo-text-embedding-3-small-v{INDEX_VERSION}"
 
@@ -37,7 +38,9 @@ class ChromaVectorIndex:
     ) -> list[dict]:
         count = self.collection.count()
         if not count:
-            return []
+            raise SearchIndexEmpty(
+                "Active Chroma collection is empty; collect and index documents first"
+            )
         where = None
         if reference_date is not None:
             where = {
