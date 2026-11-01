@@ -42,6 +42,22 @@ services:
       - airflow-state:/opt/airflow
     restart: unless-stopped
 
+  api:
+    build: .
+    working_dir: /opt/semo
+    command: ["python", "-m", "uvicorn", "semo.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8001:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-gpt-6-luna}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+    depends_on:
+      chroma:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   airflow-state:
   postgres-data:
