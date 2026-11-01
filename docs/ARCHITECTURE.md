@@ -15,6 +15,7 @@ daily_collect.py / Airflow DAG / probe.py
 | 파일 | 책임 | 수정하는 경우 |
 |---|---|---|
 | `semo/domain.py` | 정규화·해시·일정 필터링, 수집 결과 데이터 | 문서 규칙이나 날짜 조회 기준 변경 |
+| `semo/content.py` | 병합 셀의 문맥을 유지한 표 렌더링·문단 청크 | 텍스트 표현·분할 정책 변경 |
 | `semo/application.py` | 수집원 실행, 모두 성공한 후 저장, 의존성 interface | 수집 실행 순서·정책 변경 |
 | `semo/adapters/sejong.py` | 세종대 URL·HTML 파싱·기존 공지 재확인 | 사이트 구조나 대상 게시판 변경 |
 | `semo/adapters/http.py` | HTTP·robots·호출 간격, 저장된 HTML 읽기 | HTTP 도구 교체·샘플 읽기 변경 |

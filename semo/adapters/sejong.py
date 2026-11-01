@@ -8,6 +8,7 @@ from urllib.parse import parse_qs, urljoin, urlsplit
 from bs4 import BeautifulSoup
 
 from semo.application import HtmlReader, MissingSnapshot
+from semo.content import table_blocks
 from semo.domain import CollectionBatch, digest, normalize
 
 ROOT = "https://www.sejong.ac.kr"
@@ -56,9 +57,14 @@ def extract(html, url, kind):
                 }
             )
     tables = []
-    for table in body.select("table"):
+    rendered_tables = {}
+    for table in [
+        node for node in body.select("table") if node.find_parent("table") is None
+    ]:
         rows = []
         for row in table.select("tr"):
+            if row.find_parent("table") is not table:
+                continue
             rows.append(
                 [
                     {
@@ -70,9 +76,26 @@ def extract(html, url, kind):
                 ]
             )
         tables.append(rows)
+        marker = f"__SEMO_TABLE_{len(tables)}__"
+        first_row = table.find("tr")
+        rendered_tables[marker] = table_blocks(
+            rows, len(tables), bool(first_row and first_row.find("th"))
+        )
+        table.replace_with("\n\n" + marker + "\n\n")
     for node in body.select("script, style"):
         node.decompose()
-    content = body.get_text("\n", strip=True)
+    for br in body.find_all("br"):
+        br.replace_with("\n\n")
+    for block in body.find_all(
+        ["p", "div", "li", "section", "blockquote", "h1", "h2", "h3", "h4", "h5", "h6"]
+    ):
+        block.append("\n\n")
+    blocks = []
+    for paragraph in re.split(r"\n\s*\n", body.get_text()):
+        paragraph = normalize(paragraph)
+        if paragraph:
+            blocks.extend(rendered_tables.get(paragraph, [paragraph]))
+    content = "\n\n".join(blocks)
     title_text = normalize(title.get_text(" ", strip=True))
     published = normalize(date.get_text(" ", strip=True)) if date else None
     return {
@@ -80,6 +103,7 @@ def extract(html, url, kind):
         "title": title_text,
         "published_at": published,
         "content": content,
+        "content_blocks": blocks,
         "tables": tables,
         "body_status": "text_extracted"
         if normalize(content)
@@ -158,6 +182,7 @@ def notice_document(html, url):
         "title": doc["title"],
         "published_at": doc["published_at"],
         "content": doc["content"],
+        "content_blocks": doc["content_blocks"],
         "tables": doc["tables"],
         "body_status": doc["body_status"],
         "url": url,
