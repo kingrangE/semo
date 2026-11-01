@@ -37,6 +37,14 @@ docker compose exec airflow bash -c 'cd /opt/semo && python -m semo.index_cli'
 
 ## 검색과 답변
 
+활성 컬렉션과 청크 건수는 OpenAI 호출 없이 확인할 수 있습니다.
+
+```sh
+docker compose exec airflow bash -c 'cd /opt/semo && python -m semo.index_cli --status'
+```
+
+v2 컬렉션의 `chunks`가 0이면 먼저 재수집·색인을 완료해야 합니다. 답변 보류 시 `reason=no_search_results`는 검색 결과가 없었음을, `reason=insufficient_evidence`는 검색된 자료를 모델이 근거 부족으로 판단했음을 뜻합니다. `generation_used`는 답변 생성 모델의 실제 호출 여부를 나타내며, 질문 임베딩 호출과는 별개입니다.
+
 ```sh
 docker compose exec airflow bash -c 'cd /opt/semo && python -m semo.index_cli --query "복수전공 신청 기간"'
 docker compose exec airflow bash -c 'cd /opt/semo && python -m semo.index_cli --answer "복수전공 신청 기간과 신청 방법을 알려줘"'

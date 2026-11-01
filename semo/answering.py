@@ -29,6 +29,8 @@ def answer(
             "answer": NO_ANSWER,
             "sources": [],
             "as_of": reference_date.isoformat(),
+            "reason": "no_search_results",
+            "generation_used": False,
         }
     draft = generate(question, sources, reference_date)
     if not draft["supported"]:
@@ -36,6 +38,8 @@ def answer(
             "answer": NO_ANSWER,
             "sources": [],
             "as_of": reference_date.isoformat(),
+            "reason": "insufficient_evidence",
+            "generation_used": True,
         }
     paragraphs, used = [], set()
     for sentence in draft["sentences"]:
@@ -66,4 +70,6 @@ def answer(
         "answer": "\n\n".join(paragraphs),
         "sources": citations,
         "as_of": reference_date.isoformat(),
+        "reason": None,
+        "generation_used": True,
     }

@@ -17,6 +17,11 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--query", help="Search source chunks instead of indexing")
     mode.add_argument("--answer", help="Answer a question with source citations")
+    mode.add_argument(
+        "--status",
+        action="store_true",
+        help="Show active collection and chunk count without calling OpenAI",
+    )
     parser.add_argument(
         "--on",
         type=date.fromisoformat,
@@ -33,19 +38,27 @@ def main():
         parser.error("--on/--history requires --query or --answer")
     if question is not None and not normalize(question):
         parser.error("Question must not be empty")
-    if not os.environ.get("OPENAI_API_KEY"):
+    if not args.status and not os.environ.get("OPENAI_API_KEY"):
         parser.error(
             "Set OPENAI_API_KEY in your local .env before indexing or searching"
         )
-    if question is None and not os.environ.get("DATABASE_URL"):
+    if question is None and not args.status and not os.environ.get("DATABASE_URL"):
         parser.error("DATABASE_URL is required for PostgreSQL indexing")
 
-    from semo.adapters.chroma import ChromaVectorIndex
+    from semo.adapters.chroma import COLLECTION, ChromaVectorIndex
 
     index = ChromaVectorIndex(
         os.environ.get("CHROMA_HOST", "localhost"),
         int(os.environ.get("CHROMA_PORT", "8000")),
     )
+    if args.status:
+        print(
+            json.dumps(
+                {"collection": COLLECTION, "chunks": len(index.ids())},
+                ensure_ascii=False,
+            )
+        )
+        return
     from semo.adapters.embeddings import OpenAIEmbedder
 
     embed = OpenAIEmbedder()
