@@ -1,2 +1,4 @@
 beautifulsoup4==4.14.3
 psycopg[binary]==3.3.6
+chromadb-client==1.5.9
+openai==3.41.0

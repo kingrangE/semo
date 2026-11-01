@@ -21,6 +21,10 @@ daily_collect.py / Airflow DAG / probe.py
 | `semo/adapters/http.py` | HTTP·robots·호출 간격, 저장된 HTML 읽기 | HTTP 도구 교체·샘플 읽기 변경 |
 | `semo/adapters/storage.py` | PostgreSQL 트랜잭션·변경 비교·JSON 내보내기 | 저장 방식 변경 |
 | `semo/cli.py` | 인자 처리·구체적인 구현 선택·현재 시각 전달 | 실행 옵션이나 구현 연결 변경 |
+| `semo/indexing.py` | 청크 구성·변경 감지·벡터 동기화 | 청크 정책·색인 갱신 정책 변경 |
+| `semo/adapters/embeddings.py` | OpenAI 임베딩 요청·입력/응답 확인 | 임베딩 모델·제공자 변경 |
+| `semo/adapters/chroma.py` | ChromaDB 저장·삭제·검색 | 벡터 저장소 변경 |
+| `semo/index_cli.py` | PostgreSQL·임베딩·벡터 구현 연결 | 색인 실행·검색 옵션 변경 |
 
 `probe.py`는 접근성 검증 도구입니다. 운영 수집 코드가 이 도구를 import하지 않습니다. 공통 파서와 HTTP 구현은 패키지 안에 한 번만 둡니다. Airflow는 기존 CLI를 실행하며 수집 규칙을 중복 구현하지 않습니다.
 
@@ -42,3 +46,5 @@ daily_collect.py / Airflow DAG / probe.py
 네트워크·파일 없이 수집원의 조합과 실패 시 저장하지 않는 동작을 테스트합니다. PostgreSQL 통합 테스트는 재실행·수정 반영·스냅샷 교체 실패의 롤백을 확인합니다. 별도 HTTP 테스트는 robots와 호출 간격을 확인합니다. 실제 HTML 54건은 변경 전후 내용과 해시까지 비교했습니다.
 
 PostgreSQL과 JSON은 하나의 원자적 트랜잭션이 아닙니다. DB 커밋 뒤 JSON 내보내기가 실패하면 작업을 다시 실행해야 합니다. 원문에서 삭제된 공지의 판별과 재확인 범위는 다음 기능 작업에서 정해야 합니다.
+
+벡터 동기화는 `VectorIndex`와 임베딩 callable을 주입받습니다. Chroma/OpenAI SDK는 adapter에만 있으며, 원문 저장소의 `DocumentRepository` interface는 그대로 유지합니다. PostgreSQL에서 사라진 문서의 청크는 색인 동기화가 끝날 때 제거합니다. 동기화 상세와 실행 제한은 [CHROMA.md](CHROMA.md)를 참고하세요.

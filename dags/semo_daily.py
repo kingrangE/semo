@@ -34,7 +34,25 @@ def semo_daily():
             check=True,
         )
 
-    collect_public_html()
+    @task(execution_timeout=timedelta(hours=1))
+    def index_documents():
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        from airflow.exceptions import AirflowSkipException
+
+        if not os.environ.get("OPENAI_API_KEY"):
+            raise AirflowSkipException(
+                "OPENAI_API_KEY is not configured; collection remains available"
+            )
+        project = Path(__file__).resolve().parents[1]
+        subprocess.run(
+            [sys.executable, "-m", "semo.index_cli"], cwd=project, check=True
+        )
+
+    collect_public_html() >> index_documents()
 
 
 semo_daily()

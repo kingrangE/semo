@@ -1,6 +1,6 @@
 # PostgreSQL 수집 데이터 저장
 
-수집 데이터 저장소를 PostgreSQL로 교체했습니다. `documents` 테이블에 문서 ID·종류·해시와 JSONB 원문을 저장합니다. 기존 JSON 내보내기 형식과 CLI 수집 옵션은 유지합니다. 벡터 적재와 검색은 후속 단계에서 연결합니다.
+수집 데이터 저장소를 PostgreSQL로 교체했습니다. `documents` 테이블에 문서 ID·종류·해시와 JSONB 원문을 저장합니다. 기존 JSON 내보내기 형식과 CLI 수집 옵션은 유지합니다. 다음 단계의 벡터 적재와 검색은 [CHROMA.md](CHROMA.md)를 참고하세요.
 
 이번 변경은 **수집 데이터 저장소**에 적용됩니다. 이미 실행 중인 Airflow의 내부 메타데이터 DB와 실행 이력은 기존 `airflow-state` 볼륨에 그대로 둡니다.
 

@@ -14,6 +14,12 @@ services:
       retries: 12
     restart: unless-stopped
 
+  chroma:
+    image: chromadb/chroma:1.5.9
+    volumes:
+      - chroma-data:/data
+    restart: unless-stopped
+
   airflow:
     build: .
     command: standalone
@@ -23,9 +29,14 @@ services:
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
       DATABASE_URL: postgresql://semo@postgres:5432/semo
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
     depends_on:
       postgres:
         condition: service_healthy
+      chroma:
+        condition: service_started
     volumes:
       - airflow-state:/opt/airflow
     restart: unless-stopped
@@ -33,3 +44,4 @@ services:
 volumes:
   airflow-state:
   postgres-data:
+  chroma-data:
