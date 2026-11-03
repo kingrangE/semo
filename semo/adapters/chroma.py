@@ -47,6 +47,7 @@ class ChromaVectorIndex:
                 "$or": [
                     {"kind": "notice"},
                     {"kind": "program"},
+                    {"kind": "academic_guide"},
                     {
                         "$and": [
                             {"kind": "calendar"},

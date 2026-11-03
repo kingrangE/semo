@@ -3,13 +3,14 @@
 import argparse
 import json
 import os
+from collections import Counter
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from semo.adapters.http import SnapshotReader, multisite_reader, network_reader
 from semo.adapters.programs import ProgramSource, ROOTS as PROGRAM_ROOTS
-from semo.adapters.sejong import ROOT, CalendarSource, NoticeSource
+from semo.adapters.sejong import ROOT, AcademicGuideSource, CalendarSource, NoticeSource
 from semo.adapters.storage import PostgresDocumentRepository
 from semo.application import collect
 from semo.domain import upcoming
@@ -17,7 +18,7 @@ from semo.domain import upcoming
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Collect public Sejong calendar and notice HTML."
+        description="Collect public Sejong calendars, academic guides and notices."
     )
     parser.add_argument("--output", type=Path, default=Path("artifacts/daily"))
     parser.add_argument("--pages", type=int, default=1)
@@ -29,6 +30,14 @@ def main():
         "--sample-dir", type=Path, help="Replay saved HTML; missing samples are skipped"
     )
     mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--academic-guides", action="store_true",
+        help="Manually collect standing academic guides only; excluded from daily runs",
+    )
+    mode.add_argument(
+        "--inspect", action="store_true",
+        help="Show PostgreSQL document counts and titles without crawling or AI calls",
+    )
     mode.add_argument(
         "--on",
         type=date.fromisoformat,
@@ -55,6 +64,18 @@ def main():
     if not dsn:
         parser.error("DATABASE_URL is required for PostgreSQL collection/import")
     repository = PostgresDocumentRepository(dsn, args.output)
+    if args.inspect:
+        documents = repository.load()
+        print(json.dumps({
+            "documents_by_kind": dict(Counter(doc["kind"] for doc in documents)),
+            "documents": [
+                {key: doc[key] for key in (
+                    "id", "kind", "title", "url", "start_date", "end_date", "checked_at"
+                ) if key in doc}
+                for doc in documents
+            ],
+        }, ensure_ascii=False, indent=2))
+        return
     if args.import_json:
         from semo.domain import CollectionBatch
 
@@ -88,8 +109,12 @@ def main():
         )
         return
     sample_only = args.sample_dir is not None
-    sources = [CalendarSource(), NoticeSource(args.pages, sample_only)]
-    sources.extend(ProgramSource(site, args.pages, sample_only) for site in program_sites)
+    if args.academic_guides:
+        sources = [AcademicGuideSource(sample_only)]
+        program_sites = []
+    else:
+        sources = [CalendarSource(), NoticeSource(args.pages, sample_only)]
+        sources.extend(ProgramSource(site, args.pages, sample_only) for site in program_sites)
     if sample_only:
         reader = SnapshotReader(args.sample_dir)
     elif program_sites:
@@ -109,6 +134,7 @@ def main():
         json.dumps(
             {
                 "documents": len(result["documents"]),
+                "documents_by_kind": dict(Counter(doc["kind"] for doc in result["documents"])),
                 "changed": result["changed"],
                 "sample_only": sample_only,
                 "skipped": len(result["skipped_sample_urls"]),

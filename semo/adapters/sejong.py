@@ -14,6 +14,14 @@ from semo.domain import CollectionBatch, digest, normalize
 ROOT = "https://www.sejong.ac.kr"
 CALENDAR = ROOT + "/kor/academics/academic-calendar.do"
 BOARDS = [ROOT + "/kor/intro/notice1.do", ROOT + "/kor/intro/notice3.do"]
+ACADEMIC_GUIDES = (
+    "curriculum-guide", "credit-system", "register-for-class", "class-summer-winter",
+    "registration", "leave-return", "expulsion-withdrawal-reentry", "major-transfer",
+    "major-selection", "double-minor-second-major", "interdisciplinary-major",
+    "human-self-designing-major", "grades", "graduation", "early-graduation",
+    "percentage-conversion", "teaching-certificate", "scholarship-keyinformation",
+    "internal-scholarship", "korea-scholarship",
+)
 
 
 def extract(html, url, kind):
@@ -23,6 +31,11 @@ def extract(html, url, kind):
         date = soup.select_one(".b-info .b-date")
         body = soup.select_one(".b-content-box")
         assets_root = soup.select_one(".board") or body
+    elif kind == "academic":
+        title = soup.select_one("h3.page-title")
+        date = None  # A standing guide has no verified publication timestamp.
+        body = soup.select_one("#cms-content")
+        assets_root = body
     else:
         title = soup.select_one("#ModuleEcoProgramView .title h4")
         date = None  # Application/event times are not publication timestamps.
@@ -197,7 +210,45 @@ class CalendarSource:
         return CollectionBatch(
             documents=calendar_documents(read_html(CALENDAR)),
             replace_kinds={"calendar"},
+            source_status={"calendar": "collected"},
         )
+
+
+def academic_document(html: str, url: str) -> dict:
+    doc = extract(html, url, "academic")
+    if not doc["content"].strip():
+        raise ValueError(f"Academic guide has no text: {url}")
+    slug = urlsplit(url).path.rsplit("/", 1)[-1].removesuffix(".do")
+    content = json.dumps(
+        {"text": normalize(doc["content"]), "tables": doc["tables"]},
+        ensure_ascii=False, sort_keys=True,
+    )
+    return {
+        "id": f"academic:{slug}", "kind": "academic_guide",
+        "title": doc["title"], "published_at": None, "url": url,
+        "content": doc["content"], "content_blocks": doc["content_blocks"],
+        "tables": doc["tables"], "body_status": doc["body_status"],
+        "has_images": bool(doc["images"]), "assets_collected": False,
+        "content_hash": digest(doc["title"], None, content),
+    }
+
+
+class AcademicGuideSource:
+    def __init__(self, sample_only: bool = False):
+        self.sample_only = sample_only
+
+    def read(self, read_html: HtmlReader, previous: list[dict]) -> CollectionBatch:
+        batch = CollectionBatch()
+        for slug in ACADEMIC_GUIDES:
+            url = f"{ROOT}/kor/academics/{slug}.do"
+            try:
+                batch.documents.append(academic_document(read_html(url), url))
+            except MissingSnapshot:
+                if not self.sample_only:
+                    raise
+                batch.skipped_urls.append(url)
+        batch.source_status["academic_guide"] = "partial_samples" if batch.skipped_urls else "collected"
+        return batch
 
 
 class NoticeSource:
