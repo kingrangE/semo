@@ -60,3 +60,5 @@ PostgreSQL과 JSON은 하나의 원자적 트랜잭션이 아닙니다. DB 커�
 CLI와 웹의 질문 처리는 `Chat.reply`를 통해 같은 경로를 사용합니다. 핵심 모듈은 FastAPI나 OpenAI SDK를 import하지 않습니다. `semo/runtime.py`가 실제 adapter를 연결하고, HTTP 쪽에서만 준비된 모듈을 캐시해 연결을 재사용합니다. 빈 색인은 질문에 맞는 근거가 없는 경우와 구분해 준비되지 않은 상태로 처리합니다. 웹 실행과 범위는 [WEB.md](WEB.md)를 참고하세요.
 
 관측은 `semo/telemetry.py`의 기본 no-op context manager와 주입한 `observe` callable을 사용합니다. Langfuse SDK와 마스킹은 `adapters/langfuse.py`에 있으며 `runtime.py`에서 연결합니다. `eval_cli.py`는 같은 Chat 흐름으로 고정 질문을 실행하고 `evaluation.py`의 코드 점수를 Langfuse 실험에 기록합니다. 실행과 의미 평가 절차는 [EVALUATION.md](EVALUATION.md)를 참고하세요.
+
+취업·비교과의 HTML 파싱은 `adapters/programs.py`, 신청 시각·신선도 기준은 표준 라이브러리만 사용하는 `programs.py`에 있습니다. `runtime.load_programs`가 PostgreSQL 구현을 연결하고 API·CLI·Chat이 같은 기간 필터를 사용합니다. 신규 수집원과 현재 모집 조회의 범위는 [PROGRAMS.md](PROGRAMS.md)를 참고하세요.

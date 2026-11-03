@@ -16,7 +16,8 @@ from openai import APITimeoutError, RateLimitError
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from semo.chat import MAX_QUESTION_CHARS, InvalidQuestion, SearchIndexEmpty
-from semo.runtime import create_chat
+from semo.runtime import create_chat, load_programs
+from semo.programs import ProgramCatalogUnavailable, open_programs
 
 app = FastAPI(title="세모 API", version="0.1.0")
 web = Path(__file__).with_name("web")
@@ -54,6 +55,39 @@ class ChatResponse(BaseModel):
     model: str
 
 
+class Program(BaseModel):
+    id: str
+    title: str
+    source: str
+    url: str
+    application_start: datetime
+    application_end: datetime
+    event_start: datetime | None = None
+    event_end: datetime | None = None
+    target: str
+    department: str
+    checked_at: datetime
+
+
+class ProgramResponse(BaseModel):
+    items: list[Program]
+    total: int
+    as_of: datetime
+    reason: str | None
+    notice: str
+
+
+@app.get("/api/programs", response_model=ProgramResponse)
+def programs():
+    try:
+        return open_programs(load_programs(), datetime.now(ZoneInfo("Asia/Seoul")))
+    except ProgramCatalogUnavailable as error:
+        raise HTTPException(503, "활동 자료를 준비하고 있습니다.") from error
+    except Exception as error:
+        logger.exception("Program query failed")
+        raise HTTPException(503, "활동 자료를 가져오지 못했습니다.") from error
+
+
 @app.get("/", include_in_schema=False)
 def home():
     return FileResponse(web / "index.html")
@@ -85,6 +119,8 @@ def chat(request: ChatRequest):
         raise HTTPException(
             503, "검색 자료를 준비하고 있습니다. 잠시 후 다시 이용해 주세요."
         ) from error
+    except ProgramCatalogUnavailable as error:
+        raise HTTPException(503, "활동 자료를 준비하고 있습니다.") from error
     except (APITimeoutError, RateLimitError) as error:
         raise HTTPException(
             503, "답변 서비스가 지연되고 있습니다. 잠시 후 다시 질문해 주세요."

@@ -32,6 +32,8 @@ docker compose logs --tail=100 api
 
 `LANGFUSE_ENABLED=true`를 설정하면 질문·검색 근거·답변이 지정한 Langfuse 서버에 기록됩니다. 기본값은 비활성화이며, 기록 범위와 평가 실행 방법은 [EVALUATION.md](EVALUATION.md)를 참고하세요.
 
+현재 모집 활동은 `GET /api/programs` 또는 “지금 신청 가능한 비교과·취업 프로그램” 질문으로 조회할 수 있습니다. 실제 수집 제한과 신청 기간 기준은 [PROGRAMS.md](PROGRAMS.md)를 참고하세요. 유효한 자료가 없으면 모집이 없다고 단정하지 않고 원문 확인을 안내합니다.
+
 ## API
 
 ### `POST /api/chat`

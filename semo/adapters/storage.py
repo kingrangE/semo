@@ -32,6 +32,13 @@ class PostgresDocumentRepository:
                 )
             ]
 
+    def load_programs(self) -> list[dict]:
+        with psycopg.connect(self.dsn, connect_timeout=10) as connection:
+            self._initialize(connection)
+            return [row[0] for row in connection.execute(
+                "SELECT payload FROM documents WHERE kind = %s ORDER BY id", ("program",)
+            )]
+
     def save(self, batch: CollectionBatch, checked_at: str, sample_only: bool) -> dict:
         with psycopg.connect(self.dsn, connect_timeout=10) as connection:
             self._initialize(connection)

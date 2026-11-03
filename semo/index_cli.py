@@ -17,6 +17,8 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--query", help="Search source chunks instead of indexing")
     mode.add_argument("--answer", help="Answer a question with source citations")
+    mode.add_argument("--programs", action="store_true", help="List verified open programs without OpenAI")
+    parser.add_argument("--at", type=datetime.fromisoformat, help="Program reference datetime with UTC offset")
     mode.add_argument(
         "--status",
         action="store_true",
@@ -33,6 +35,17 @@ def main():
         help="Include past calendar events for historical questions",
     )
     args = parser.parse_args()
+    if args.programs:
+        if args.on or args.history or (args.at and args.at.utcoffset() is None):
+            parser.error("--programs uses --at with timezone, not --on/--history")
+        from semo.programs import KST, open_programs
+        from semo.runtime import load_programs
+
+        result = open_programs(load_programs(), args.at or datetime.now(KST))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return
+    if args.at:
+        parser.error("--at requires --programs")
     question = args.query if args.query is not None else args.answer
     if (args.on or args.history) and question is None:
         parser.error("--on/--history requires --query or --answer")
