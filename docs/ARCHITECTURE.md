@@ -62,3 +62,5 @@ CLI와 웹의 질문 처리는 `Chat.reply`를 통해 같은 경로를 사용합
 관측은 `semo/telemetry.py`의 기본 no-op context manager와 주입한 `observe` callable을 사용합니다. Langfuse SDK와 마스킹은 `adapters/langfuse.py`에 있으며 `runtime.py`에서 연결합니다. `eval_cli.py`는 같은 Chat 흐름으로 고정 질문을 실행하고 `evaluation.py`의 코드 점수를 Langfuse 실험에 기록합니다. 실행과 의미 평가 절차는 [EVALUATION.md](EVALUATION.md)를 참고하세요.
 
 취업·비교과의 HTML 파싱은 `adapters/programs.py`, 신청 시각·신선도 기준은 표준 라이브러리만 사용하는 `programs.py`에 있습니다. `runtime.load_programs`가 PostgreSQL 구현을 연결하고 API·CLI·Chat이 같은 기간 필터를 사용합니다. 신규 수집원과 현재 모집 조회의 범위는 [PROGRAMS.md](PROGRAMS.md)를 참고하세요.
+
+공식 상시 학사안내는 `AcademicGuideSource`가 수집하고, 공지와 같은 문단·표 추출기를 사용합니다. 학사일정은 계속 `CalendarSource`에서 별도 문서로 저장합니다. 수집 종류와 실제 DB 확인 절차는 [ACADEMICS.md](ACADEMICS.md)를 참고하세요.

@@ -1,7 +1,9 @@
 """PostgreSQL document storage and atomic JSON export."""
 
 import json
+from contextlib import contextmanager
 from pathlib import Path
+from uuid import uuid4
 
 import psycopg
 from psycopg.types.json import Jsonb
@@ -13,6 +15,13 @@ class PostgresDocumentRepository:
     def __init__(self, dsn: str, directory: Path):
         self.dsn = dsn
         self.directory = directory
+
+    @contextmanager
+    def indexing_lock(self):
+        # Daily and calendar DAGs share one Chroma collection; serialize their syncs.
+        with psycopg.connect(self.dsn, connect_timeout=10, autocommit=True) as connection:
+            connection.execute("SELECT pg_advisory_lock(%s)", (0x53454D4F,))
+            yield  # Closing the connection releases the session advisory lock.
 
     @staticmethod
     def _initialize(connection):
@@ -73,9 +82,12 @@ class PostgresDocumentRepository:
         }
         # shortcut: PostgreSQL commits before JSON export, retry the run if export fails.
         self.directory.mkdir(parents=True, exist_ok=True)
-        temporary = self.directory / "documents.json.tmp"
-        temporary.write_text(
-            json.dumps(export, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        temporary.replace(self.directory / "documents.json")
+        temporary = self.directory / f"documents-{uuid4().hex}.json.tmp"
+        try:
+            temporary.write_text(
+                json.dumps(export, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            temporary.replace(self.directory / "documents.json")
+        finally:
+            temporary.unlink(missing_ok=True)
         return export

@@ -99,7 +99,8 @@ def main():
             os.environ["DATABASE_URL"],
             Path(os.environ.get("SEMO_DATA_DIR", "artifacts/daily")),
         )
-        result = synchronize(repository.load(), index, embed)
+        with repository.indexing_lock():
+            result = synchronize(repository.load(), index, embed)
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 

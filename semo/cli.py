@@ -31,6 +31,10 @@ def main():
     )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
+        "--calendar", action="store_true",
+        help="Collect the academic calendar only; scheduled every six months",
+    )
+    mode.add_argument(
         "--academic-guides", action="store_true",
         help="Manually collect standing academic guides only; excluded from daily runs",
     )
@@ -112,8 +116,11 @@ def main():
     if args.academic_guides:
         sources = [AcademicGuideSource(sample_only)]
         program_sites = []
+    elif args.calendar:
+        sources = [CalendarSource()]
+        program_sites = []
     else:
-        sources = [CalendarSource(), NoticeSource(args.pages, sample_only)]
+        sources = [NoticeSource(args.pages, sample_only)]
         sources.extend(ProgramSource(site, args.pages, sample_only) for site in program_sites)
     if sample_only:
         reader = SnapshotReader(args.sample_dir)
