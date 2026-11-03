@@ -4,6 +4,7 @@ RUN pip install --no-cache-dir "apache-airflow==3.3.2" -r /tmp/semo-requirements
 COPY --chown=airflow:root daily_collect.py /opt/semo/
 COPY --chown=airflow:root semo /opt/semo/semo
 COPY --chown=airflow:root dags /opt/semo/dags
+COPY --chown=airflow:root evals /opt/semo/evals
 RUN mkdir -p /opt/airflow/semo-data
 ENV AIRFLOW__CORE__DAGS_FOLDER=/opt/semo/dags
 ENV AIRFLOW__CORE__LOAD_EXAMPLES=False

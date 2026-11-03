@@ -58,3 +58,5 @@ PostgreSQL과 JSON은 하나의 원자적 트랜잭션이 아닙니다. DB 커�
 답변 생성은 모델 callable을 전달받고, 실제 검색 결과에 존재하는 출처 번호만 인용으로 변환합니다. 원문 URL은 모델이 생성하지 않고 저장된 메타데이터에서 가져옵니다. 모델의 사실 판단은 여전히 오류 가능성이 있으며 인용 유효성 검증이 사실 정확성을 보장하지는 않습니다. 현재 기본 날짜 필터는 종료일이 확인된 학사일정에만 적용합니다.
 
 CLI와 웹의 질문 처리는 `Chat.reply`를 통해 같은 경로를 사용합니다. 핵심 모듈은 FastAPI나 OpenAI SDK를 import하지 않습니다. `semo/runtime.py`가 실제 adapter를 연결하고, HTTP 쪽에서만 준비된 모듈을 캐시해 연결을 재사용합니다. 빈 색인은 질문에 맞는 근거가 없는 경우와 구분해 준비되지 않은 상태로 처리합니다. 웹 실행과 범위는 [WEB.md](WEB.md)를 참고하세요.
+
+관측은 `semo/telemetry.py`의 기본 no-op context manager와 주입한 `observe` callable을 사용합니다. Langfuse SDK와 마스킹은 `adapters/langfuse.py`에 있으며 `runtime.py`에서 연결합니다. `eval_cli.py`는 같은 Chat 흐름으로 고정 질문을 실행하고 `evaluation.py`의 코드 점수를 Langfuse 실험에 기록합니다. 실행과 의미 평가 절차는 [EVALUATION.md](EVALUATION.md)를 참고하세요.
