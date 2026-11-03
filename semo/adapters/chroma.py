@@ -22,6 +22,13 @@ class ChromaVectorIndex:
         # shortcut: load IDs in one request, paginate when the corpus no longer fits in memory.
         return set(self.collection.get(include=[])["ids"])
 
+    def inventory(self) -> list[dict]:
+        result = self.collection.get(include=["metadatas"])
+        return [
+            {"id": identifier, "metadata": metadata}
+            for identifier, metadata in zip(result["ids"], result["metadatas"], strict=True)
+        ]
+
     def upsert(self, chunks: list[dict], embeddings: list[list[float]]) -> None:
         self.collection.upsert(
             ids=[chunk["id"] for chunk in chunks],

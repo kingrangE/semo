@@ -37,11 +37,24 @@ docker compose exec airflow bash -c 'cd /opt/semo && python -m semo.index_cli'
 
 ## 검색과 답변
 
-활성 컬렉션과 청크 건수는 OpenAI 호출 없이 확인할 수 있습니다.
+활성 컬렉션과 종류별 청크·색인된 문서 수는 OpenAI 호출 없이 확인할 수 있습니다. `DATABASE_URL`이 있으면 PostgreSQL 원문을 같은 분할 함수로 계산해 색인과 비교합니다. PostgreSQL 연결이 없으면 Chroma 통계만 표시합니다.
 
 ```sh
 docker compose exec airflow bash -c 'cd /opt/semo && python -m semo.index_cli --status'
 ```
+
+- `chunks_by_kind`: Chroma에 실제 저장된 종류별 청크 수
+- `indexed_documents_by_kind`: Chroma 메타데이터의 고유 원문 ID 수
+- `postgresql.documents_by_kind`: PostgreSQL에 저장된 종류별 원문 수
+- `postgresql.expected_chunks_by_kind`: 현재 원문·분할 규칙으로 계산한 예상 청크 수
+- `postgresql.missing_chunks_by_kind`: 아직 없거나 원문 변경으로 갱신해야 할 청크 수
+- `postgresql.stale_chunks`: 현재 원문에 대응하지 않는 예전 청크 수
+- `postgresql.skipped_documents_by_reason`: 이미지뿐이거나 빈 본문이라 색인하지 않은 문서 수
+- `postgresql.in_sync`: 실제 ID 집합과 예상 ID 집합이 완전히 일치하는지 여부
+
+학사안내가 `postgresql.documents_by_kind`에도 없으면 수동 수집/가져오기가 필요합니다. PostgreSQL에는 있지만 예상 청크가 Chroma에 없으면 색인을 실행해야 합니다. 비교는 수집·색인이 끝난 뒤 확인하세요. 진행 중인 동기화나 수집으로 일시적인 차이가 생길 수 있습니다.
+
+청크는 본문 약 1,600자 이내로 묶으며 짧은 일정은 보통 1청크입니다. 수집 횟수에 비례해 누적하지 않고 문서 변경 시 이전 청크를 대체합니다. 현재 로컬의 학사일정 50건·학사안내 20페이지 스냅샷은 각각 50·53청크이며, 이 숫자는 사용자 DB의 내용과 일치한다는 보장이 아닙니다.
 
 v2 컬렉션의 `chunks`가 0이면 먼저 재수집·색인을 완료해야 합니다. 답변 보류 시 `reason=no_search_results`는 검색 결과가 없었음을, `reason=insufficient_evidence`는 검색된 자료를 모델이 근거 부족으로 판단했음을 뜻합니다. `generation_used`는 답변 생성 모델의 실제 호출 여부를 나타내며, 질문 임베딩 호출과는 별개입니다.
 

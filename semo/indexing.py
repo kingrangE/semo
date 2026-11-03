@@ -3,6 +3,7 @@
 import hashlib
 import json
 from collections.abc import Callable
+from collections import Counter, defaultdict
 from datetime import date
 from typing import Protocol
 
@@ -18,6 +19,45 @@ class VectorIndex(Protocol):
     def upsert(self, chunks: list[dict], embeddings: list[list[float]]) -> None: ...
 
     def delete(self, ids: list[str]) -> None: ...
+
+
+def index_status(entries: list[dict], documents: list[dict] | None = None) -> dict:
+    stored_ids = {entry["id"] for entry in entries}
+    chunks_by_kind = Counter()
+    documents_by_kind = defaultdict(set)
+    for entry in entries:
+        metadata = entry.get("metadata") or {}
+        kind = metadata.get("kind", "unknown")
+        chunks_by_kind[kind] += 1
+        if metadata.get("document_id"):
+            documents_by_kind[kind].add(metadata["document_id"])
+    result = {
+        "chunks": len(entries),
+        "chunks_by_kind": dict(chunks_by_kind),
+        "indexed_documents_by_kind": {kind: len(ids) for kind, ids in documents_by_kind.items()},
+    }
+    if documents is not None:
+        expected, expected_counts, missing_counts, skipped = set(), Counter(), Counter(), Counter()
+        for doc in documents:
+            chunks = document_chunks(doc)
+            if not chunks:
+                skipped["image_only" if doc.get("body_status") == "image_only" else "empty_content"] += 1
+            expected_counts[doc["kind"]] += len(chunks)
+            for chunk in chunks:
+                expected.add(chunk["id"])
+                if chunk["id"] not in stored_ids:
+                    missing_counts[doc["kind"]] += 1
+        result["postgresql"] = {
+            "documents": len(documents),
+            "documents_by_kind": dict(Counter(doc["kind"] for doc in documents)),
+            "expected_chunks": len(expected),
+            "expected_chunks_by_kind": dict(expected_counts),
+            "skipped_documents_by_reason": dict(skipped),
+            "missing_chunks_by_kind": dict(missing_counts),
+            "stale_chunks": len(stored_ids - expected),
+            "in_sync": stored_ids == expected,
+        }
+    return result
 
 
 def document_chunks(document: dict) -> list[dict]:

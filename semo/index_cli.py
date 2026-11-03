@@ -8,7 +8,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from semo.adapters.storage import PostgresDocumentRepository
-from semo.indexing import synchronize
+from semo.indexing import index_status, synchronize
 from semo.domain import normalize
 
 
@@ -22,7 +22,7 @@ def main():
     mode.add_argument(
         "--status",
         action="store_true",
-        help="Show active collection and chunk count without calling OpenAI",
+        help="Show index counts by kind and compare with PostgreSQL without OpenAI",
     )
     parser.add_argument(
         "--on",
@@ -77,10 +77,18 @@ def main():
         int(os.environ.get("CHROMA_PORT", "8000")),
     )
     if args.status:
+        documents = None
+        if os.environ.get("DATABASE_URL"):
+            repository = PostgresDocumentRepository(
+                os.environ["DATABASE_URL"],
+                Path(os.environ.get("SEMO_DATA_DIR", "artifacts/daily")),
+            )
+            documents = repository.load()
         print(
             json.dumps(
-                {"collection": COLLECTION, "chunks": len(index.ids())},
+                {"collection": COLLECTION, **index_status(index.inventory(), documents)},
                 ensure_ascii=False,
+                indent=2,
             )
         )
         return
