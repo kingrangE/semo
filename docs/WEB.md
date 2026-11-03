@@ -30,6 +30,8 @@ docker compose logs --tail=100 api
 
 각 질문은 독립적으로 처리합니다. 이전 질문을 서버에 대화 맥락으로 전달하지 않으며, 앱에서 질문·답변 이력을 별도로 저장하지 않습니다. 새로고침하면 화면의 대화가 사라집니다. API 키는 브라우저에 전달하지 않습니다.
 
+`LANGFUSE_ENABLED=true`를 설정하면 질문·검색 근거·답변이 지정한 Langfuse 서버에 기록됩니다. 기본값은 비활성화이며, 기록 범위와 평가 실행 방법은 [EVALUATION.md](EVALUATION.md)를 참고하세요.
+
 ## API
 
 ### `POST /api/chat`

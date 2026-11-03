@@ -11,14 +11,17 @@ def create_chat() -> Chat:
     from semo.adapters.answers import OpenAIAnswerer
     from semo.adapters.chroma import ChromaVectorIndex
     from semo.adapters.embeddings import OpenAIEmbedder
+    from semo.adapters.langfuse import observer
 
     model = os.environ.get("OPENAI_CHAT_MODEL") or "gpt-6-luna"
+    observe = observer()
     return Chat(
         ChromaVectorIndex(
             os.environ.get("CHROMA_HOST", "localhost"),
             int(os.environ.get("CHROMA_PORT", "8000")),
         ),
-        OpenAIEmbedder(),
-        OpenAIAnswerer(model),
+        OpenAIEmbedder(observe),
+        OpenAIAnswerer(model, observe),
         model,
+        observe,
     )

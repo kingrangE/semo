@@ -1,4 +1,4 @@
-"""HTTP adapter and local chat page. No conversation content is persisted."""
+"""HTTP adapter and local chat page; optional telemetry is configured separately."""
 
 import logging
 import os
