@@ -62,6 +62,7 @@ class PostgresDocumentRepository:
             "checked_at": checked_at,
             "changed": changed,
             "documents": stored,
+            "source_status": batch.source_status,
         }
         # shortcut: PostgreSQL commits before JSON export, retry the run if export fails.
         self.directory.mkdir(parents=True, exist_ok=True)

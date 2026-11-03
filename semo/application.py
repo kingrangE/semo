@@ -39,7 +39,9 @@ def collect(
         batch.documents.extend(result.documents)
         batch.skipped_urls.extend(result.skipped_urls)
         batch.replace_kinds.update(result.replace_kinds)
+        batch.source_status.update(result.source_status)
     # No writes until every source has completed successfully.
     result = repository.save(batch, checked_at, sample_only)
     result["skipped_sample_urls"] = batch.skipped_urls
+    result["source_status"] = batch.source_status
     return result

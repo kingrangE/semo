@@ -24,6 +24,7 @@ class CollectionBatch:
     documents: list[dict] = field(default_factory=list)
     skipped_urls: list[str] = field(default_factory=list)
     replace_kinds: set[str] = field(default_factory=set)
+    source_status: dict[str, str] = field(default_factory=dict)
 
 
 def upcoming(documents: list[dict], on: date) -> list[dict]:

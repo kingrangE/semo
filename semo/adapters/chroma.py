@@ -46,6 +46,7 @@ class ChromaVectorIndex:
             where = {
                 "$or": [
                     {"kind": "notice"},
+                    {"kind": "program"},
                     {
                         "$and": [
                             {"kind": "calendar"},

@@ -13,6 +13,14 @@ from semo.domain import digest
 UA = "SemoFeasibilityProbe/0.1"
 
 
+class SourceBlocked(ValueError):
+    pass
+
+
+class SourceUnavailable(RuntimeError):
+    pass
+
+
 class Robots:
     """Handle these sites' wildcard/end-anchor rules (urllib.robotparser does not)."""
 
@@ -107,21 +115,36 @@ def network_reader(root: str, output: Path):
     output.mkdir(parents=True, exist_ok=True)
     response = fetch(root + "/robots.txt", output / "robots.txt")
     if not response["ok"]:
-        raise RuntimeError(f"robots.txt unavailable: {response}")
+        raise SourceUnavailable(f"robots.txt unavailable: {response}")
     policy = Robots((output / "robots.txt").read_text())
     last_request = time.monotonic()
 
     def read_html(url):
         nonlocal last_request
         if urlsplit(url).netloc != urlsplit(root).netloc or not policy.allowed(url):
-            raise ValueError(f"URL not allowed: {url}")
+            raise SourceBlocked(f"URL not allowed: {url}")
         time.sleep(max(0, max(1, policy.delay) - (time.monotonic() - last_request)))
         destination = output / (digest(url, None, "") + ".html")
         response = fetch(url, destination)
         last_request = time.monotonic()
         if not response["ok"] or "text/html" not in response["content_type"]:
-            raise RuntimeError(f"HTML fetch failed: {response}")
+            raise SourceUnavailable(f"HTML fetch failed: {response}")
         return destination.read_text(encoding="utf-8")
+
+    return read_html
+
+
+def multisite_reader(roots: list[str], output: Path):
+    readers = {}
+
+    def read_html(url):
+        parts = urlsplit(url)
+        root = f"{parts.scheme}://{parts.netloc}"
+        if root not in roots:
+            raise SourceBlocked(f"Unconfigured source: {root}")
+        if root not in readers:
+            readers[root] = network_reader(root, output / parts.netloc)
+        return readers[root](url)
 
     return read_html
 

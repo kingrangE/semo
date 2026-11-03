@@ -36,6 +36,9 @@ def document_chunks(document: dict) -> list[dict]:
     if document["kind"] == "calendar":
         metadata["start_day"] = date.fromisoformat(document["start_date"]).toordinal()
         metadata["end_day"] = date.fromisoformat(document["end_date"]).toordinal()
+    if document["kind"] == "program":
+        for key in ("source", "body_status", "application_start", "application_end", "target", "category"):
+            metadata[key] = document.get(key) or ""
     header = f"제목: {document['title'][:256]}\n작성일: {str(document.get('published_at') or '')[:40]}\n"
     # Legacy exports lack block boundaries; recollect once for proper table rows.
     blocks = document.get("content_blocks") or [normalize(content)]

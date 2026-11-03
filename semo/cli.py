@@ -7,7 +7,8 @@ from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from semo.adapters.http import SnapshotReader, network_reader
+from semo.adapters.http import SnapshotReader, multisite_reader, network_reader
+from semo.adapters.programs import ProgramSource, ROOTS as PROGRAM_ROOTS
 from semo.adapters.sejong import ROOT, CalendarSource, NoticeSource
 from semo.adapters.storage import PostgresDocumentRepository
 from semo.application import collect
@@ -20,6 +21,10 @@ def main():
     )
     parser.add_argument("--output", type=Path, default=Path("artifacts/daily"))
     parser.add_argument("--pages", type=int, default=1)
+    parser.add_argument(
+        "--program-sources", default=os.environ.get("SEMO_PROGRAM_SOURCES", ""),
+        help="Comma-separated optional public sources: do,udream (robots enforced)",
+    )
     parser.add_argument(
         "--sample-dir", type=Path, help="Replay saved HTML; missing samples are skipped"
     )
@@ -35,6 +40,9 @@ def main():
         help="Import an existing document export into PostgreSQL",
     )
     args = parser.parse_args()
+    program_sites = list(dict.fromkeys(s.strip() for s in args.program_sources.split(",") if s.strip()))
+    if any(site not in PROGRAM_ROOTS for site in program_sites):
+        parser.error("--program-sources accepts do,udream only")
     if args.on:
         data = json.loads((args.output / "documents.json").read_text(encoding="utf-8"))
         print(
@@ -81,11 +89,15 @@ def main():
         return
     sample_only = args.sample_dir is not None
     sources = [CalendarSource(), NoticeSource(args.pages, sample_only)]
-    reader = (
-        SnapshotReader(args.sample_dir)
-        if sample_only
-        else network_reader(ROOT, args.output / "raw")
-    )
+    sources.extend(ProgramSource(site, args.pages, sample_only) for site in program_sites)
+    if sample_only:
+        reader = SnapshotReader(args.sample_dir)
+    elif program_sites:
+        reader = multisite_reader(
+            [ROOT] + [PROGRAM_ROOTS[s] for s in program_sites], args.output / "raw"
+        )
+    else:
+        reader = network_reader(ROOT, args.output / "raw")
     result = collect(
         sources,
         reader,
@@ -100,6 +112,7 @@ def main():
                 "changed": result["changed"],
                 "sample_only": sample_only,
                 "skipped": len(result["skipped_sample_urls"]),
+                "source_status": result["source_status"],
             },
             ensure_ascii=False,
         )

@@ -27,6 +27,7 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      SEMO_PROGRAM_SOURCES: ${SEMO_PROGRAM_SOURCES:-}
       DATABASE_URL: postgresql://semo@postgres:5432/semo
       PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}

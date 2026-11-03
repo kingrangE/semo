@@ -1,4 +1,4 @@
-"""Airflow 3: collect public Sejong calendar and notices every day at 06:00 KST."""
+"""Airflow 3: collect public Sejong sources daily at 06:00 KST, then index."""
 
 from datetime import timedelta
 
