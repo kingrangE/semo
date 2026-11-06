@@ -24,12 +24,18 @@ def main():
     parser.add_argument("--pages", type=int, default=1)
     parser.add_argument(
         "--program-sources", default=os.environ.get("SEMO_PROGRAM_SOURCES", ""),
-        help="Comma-separated optional public sources: do,udream (robots enforced)",
+        help="Comma-separated optional public sources: do,udream",
+    )
+    parser.add_argument(
+        "--direct-program-fetch", action="store_true",
+        default=os.environ.get("SEMO_DIRECT_PROGRAM_FETCH", "false").lower() == "true",
+        help="Fetch public do/udream HTML without enforcing robots rules; HTTPS, host and rate limits remain enforced",
     )
     parser.add_argument(
         "--sample-dir", type=Path, help="Replay saved HTML; missing samples are skipped"
     )
     mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--programs-only", action="store_true", help="Collect selected program sources only")
     mode.add_argument(
         "--calendar", action="store_true",
         help="Collect the academic calendar only; scheduled every six months",
@@ -56,6 +62,8 @@ def main():
     program_sites = list(dict.fromkeys(s.strip() for s in args.program_sources.split(",") if s.strip()))
     if any(site not in PROGRAM_ROOTS for site in program_sites):
         parser.error("--program-sources accepts do,udream only")
+    if args.programs_only and not program_sites:
+        parser.error("--programs-only requires --program-sources do,udream")
     if args.on:
         data = json.loads((args.output / "documents.json").read_text(encoding="utf-8"))
         print(
@@ -120,13 +128,14 @@ def main():
         sources = [CalendarSource()]
         program_sites = []
     else:
-        sources = [NoticeSource(args.pages, sample_only)]
+        sources = [] if args.programs_only else [NoticeSource(args.pages, sample_only)]
         sources.extend(ProgramSource(site, args.pages, sample_only) for site in program_sites)
     if sample_only:
         reader = SnapshotReader(args.sample_dir)
     elif program_sites:
         reader = multisite_reader(
-            [ROOT] + [PROGRAM_ROOTS[s] for s in program_sites], args.output / "raw"
+            [ROOT] + [PROGRAM_ROOTS[s] for s in program_sites], args.output / "raw",
+            direct_roots=tuple(PROGRAM_ROOTS[s] for s in program_sites) if args.direct_program_fetch else (),
         )
     else:
         reader = network_reader(ROOT, args.output / "raw")

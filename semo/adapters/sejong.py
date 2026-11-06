@@ -36,6 +36,11 @@ def extract(html, url, kind):
         date = None  # A standing guide has no verified publication timestamp.
         body = soup.select_one("#cms-content")
         assets_root = body
+    elif kind == "udream":
+        title = soup.select_one("#Title")
+        date = None
+        body = soup.select_one("#Info")
+        assets_root = body
     else:
         title = soup.select_one("#ModuleEcoProgramView .title h4")
         date = None  # Application/event times are not publication timestamps.

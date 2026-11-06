@@ -66,6 +66,8 @@ def program_hits(selection: dict) -> list[dict]:
             f"수집 확인 시각: {doc['checked_at']}; 조회 기준 시각: {selection['as_of']}",
             f"후보 총 {selection['total']}건 중 마감이 빠른 최대 20건을 제공했습니다.",
             NOTICE,
+            "참여 자격과 신청 방법의 원문 근거(상단 요약과 다르면 본문 제한도 확인):",
+            doc.get("content", "")[:6000],
         ])
         hits.append({"text": text, "metadata": {
             "document_id": doc["id"], "title": doc["title"], "url": doc["url"],

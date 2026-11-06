@@ -14,6 +14,7 @@ from semo.domain import CollectionBatch, digest, normalize
 
 ROOTS = {"do": "https://do.sejong.ac.kr", "udream": "https://udream.sejong.ac.kr"}
 LISTINGS = {"do": ROOTS["do"] + "/ko/program/all", "udream": ROOTS["udream"] + "/Main/default.aspx"}
+UDREAM_PROGRAMS = ROOTS["udream"] + "/Career/CareerTask/ProgramList.aspx"
 
 
 def time_range(element):
@@ -127,6 +128,42 @@ def udream_documents(html: str) -> list[dict]:
     return list(documents.values())
 
 
+def udream_program_document(html: str, url: str) -> dict:
+    if "오류입니다." in html and 'id="Title"' not in html:
+        raise SourceUnavailable("UDream returned an error page")
+    base = extract(html, url, "udream")
+    soup = BeautifulSoup(html, "html.parser")
+    period, target, status = (soup.select_one(selector) for selector in ("#rsDate", "#target", "#dDay"))
+    if period is None or target is None or status is None:
+        raise ValueError("UDream application fields missing; keep previous data")
+    dates = re.findall(r"\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}", period.get_text(" ", strip=True))
+    external_application = "온라인 신청불가" in period.get_text()
+    if len(dates) != 2 and not external_application:
+        raise ValueError("UDream application times missing; keep previous data")
+    from zoneinfo import ZoneInfo
+
+    start, end = (datetime.fromisoformat(value).replace(tzinfo=ZoneInfo("Asia/Seoul")).isoformat() for value in dates) if len(dates) == 2 else (None, None)
+    if start and end < start:
+        raise ValueError("UDream application period is reversed")
+    target_text = normalize(target.get_text(" ", strip=True))
+    status_text = normalize(status.get_text(" ", strip=True))
+    identifier = parse_qs(urlsplit(url).query)["pgdx"][0]
+    blocks = [f"신청기간: {start or '확인 불가'} ~ {end or '확인 불가'}", f"참여대상: {target_text}",
+              f"접수상태(수집 시점): {status_text}"] + base["content_blocks"]
+    return finish({
+        "id": f"program:udream:pgdx:{identifier}", "kind": "program", "source": "udream",
+        "title": base["title"], "published_at": None, "url": url,
+        "content": "\n\n".join(blocks), "content_blocks": blocks,
+        "body_status": base["body_status"], "tables": base["tables"],
+        "has_images": bool(base["images"]), "assets_collected": False,
+        "application_start": start, "application_end": end,
+        "event_start": None, "event_end": None,
+        "application_closed": status_text != "진행중",
+        "category": "취업·진로", "target": target_text,
+        "department": target_text,
+    })
+
+
 class ProgramSource:
     def __init__(self, site: str, pages: int = 1, sample_only: bool = False):
         if site not in ROOTS or not 1 <= pages <= 10:
@@ -138,6 +175,29 @@ class ProgramSource:
         try:
             if self.site == "udream":
                 batch.documents = udream_documents(read_html(LISTINGS[self.site]))
+                listing = BeautifulSoup(read_html(UDREAM_PROGRAMS), "html.parser")
+                identifiers = list(dict.fromkeys(
+                    match[1] for node in listing.select("#programZone li[onclick]")
+                    if (match := re.fullmatch(r"(?:javascript:)?goView\('([A-Za-z0-9]+)'\);?", node["onclick"].strip()))
+                ))
+                if not identifiers:
+                    raise ValueError("UDream program detail links missing; keep previous data")
+                urls = [ROOTS["udream"] + "/community/Program/programView.aspx?pgdx=" + identifier for identifier in identifiers]
+                if not self.sample_only:
+                    urls = list(dict.fromkeys(urls + [d["url"] for d in previous
+                        if d.get("source") == "udream" and d.get("body_status") != "listing_only"
+                        and "/community/Program/programView.aspx?pgdx=" in d.get("url", "")]))
+                for url in urls:
+                    try:
+                        doc = udream_program_document(read_html(url), url)
+                        batch.documents = [d for d in batch.documents if d["id"] != doc["id"]]
+                        batch.documents.append(doc)
+                    except MissingSnapshot:
+                        if not self.sample_only:
+                            raise
+                        batch.skipped_urls.append(url)
+                    except SourceUnavailable:
+                        batch.skipped_urls.append(url)
             else:
                 urls = set()
                 for page in range(1, self.pages + 1):
@@ -159,7 +219,9 @@ class ProgramSource:
                         if not self.sample_only:
                             raise
                         batch.skipped_urls.append(url)
-            batch.source_status[self.site] = "collected" if self.site == "do" else "listing_only"
+                    except SourceUnavailable:
+                        batch.skipped_urls.append(url)
+            batch.source_status[self.site] = "partial" if batch.skipped_urls else "collected"
         except SourceBlocked:
             return CollectionBatch(source_status={self.site: "blocked_by_robots"})
         except SourceUnavailable:

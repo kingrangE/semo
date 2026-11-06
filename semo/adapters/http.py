@@ -111,7 +111,7 @@ def fetch(url, destination):
     }
 
 
-def network_reader(root: str, output: Path):
+def network_reader(root: str, output: Path, *, respect_robots: bool = True):
     output.mkdir(parents=True, exist_ok=True)
     response = fetch(root + "/robots.txt", output / "robots.txt")
     if not response["ok"]:
@@ -121,9 +121,9 @@ def network_reader(root: str, output: Path):
 
     def read_html(url):
         nonlocal last_request
-        if urlsplit(url).netloc != urlsplit(root).netloc or not policy.allowed(url):
+        if urlsplit(url).scheme != "https" or urlsplit(url).netloc != urlsplit(root).netloc or (respect_robots and not policy.allowed(url)):
             raise SourceBlocked(f"URL not allowed: {url}")
-        time.sleep(max(0, max(1, policy.delay) - (time.monotonic() - last_request)))
+        time.sleep(max(0, max(3, policy.delay) - (time.monotonic() - last_request)))
         destination = output / (digest(url, None, "") + ".html")
         response = fetch(url, destination)
         last_request = time.monotonic()
@@ -134,7 +134,7 @@ def network_reader(root: str, output: Path):
     return read_html
 
 
-def multisite_reader(roots: list[str], output: Path):
+def multisite_reader(roots: list[str], output: Path, *, direct_roots: tuple[str, ...] = ()):
     readers = {}
 
     def read_html(url):
@@ -143,7 +143,7 @@ def multisite_reader(roots: list[str], output: Path):
         if root not in roots:
             raise SourceBlocked(f"Unconfigured source: {root}")
         if root not in readers:
-            readers[root] = network_reader(root, output / parts.netloc)
+            readers[root] = network_reader(root, output / parts.netloc, respect_robots=root not in direct_roots)
         return readers[root](url)
 
     return read_html
