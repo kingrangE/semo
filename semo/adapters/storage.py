@@ -31,15 +31,23 @@ class PostgresDocumentRepository:
             "payload JSONB NOT NULL)"
         )
 
-    def load(self) -> list[dict]:
+    def load(self, *, initialize: bool = True) -> list[dict]:
         with psycopg.connect(self.dsn, connect_timeout=10) as connection:
-            self._initialize(connection)
+            if initialize:
+                self._initialize(connection)
             return [
                 row[0]
                 for row in connection.execute(
                     "SELECT payload FROM documents ORDER BY id"
                 )
             ]
+
+    def get(self, document_id: str) -> dict | None:
+        with psycopg.connect(self.dsn, connect_timeout=10) as connection:
+            row = connection.execute(
+                "SELECT payload FROM documents WHERE id = %s", (document_id,)
+            ).fetchone()
+            return row[0] if row else None
 
     def load_programs(self) -> list[dict]:
         with psycopg.connect(self.dsn, connect_timeout=10) as connection:

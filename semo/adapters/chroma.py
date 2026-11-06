@@ -10,8 +10,11 @@ COLLECTION = f"semo-text-embedding-3-small-v{INDEX_VERSION}"
 
 
 class ChromaVectorIndex:
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str, port: int, *, create: bool = True):
         client = chromadb.HttpClient(host=host, port=port)
+        if not create:
+            self.collection = client.get_collection(name=COLLECTION, embedding_function=None)
+            return
         self.collection = client.get_or_create_collection(
             name=COLLECTION,
             embedding_function=None,

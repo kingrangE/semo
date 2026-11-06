@@ -18,8 +18,10 @@ from pydantic import BaseModel, ConfigDict, StringConstraints
 from semo.chat import MAX_QUESTION_CHARS, InvalidQuestion, SearchIndexEmpty
 from semo.runtime import create_chat, load_programs
 from semo.programs import ProgramCatalogUnavailable, open_programs
+from semo.admin_api import router as admin_router
 
 app = FastAPI(title="세모 API", version="0.1.0")
+app.include_router(admin_router)
 web = Path(__file__).with_name("web")
 app.mount("/static", StaticFiles(directory=web), name="static")
 get_chat = lru_cache(maxsize=1)(create_chat)

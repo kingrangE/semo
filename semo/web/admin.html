@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#9c233d">
+  <title>수집 자료 관리 — 세모</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/admin.css">
+  <script src="/static/admin.js" defer></script>
+</head>
+<body class="admin-page">
+  <a class="skip-link" href="#search">자료 검색으로 이동</a>
+  <aside class="sidebar">
+    <a class="brand" href="/" aria-label="세모 홈"><span class="brand-mark" aria-hidden="true">△</span> 세모<span class="brand-dot">.</span></a>
+    <p class="brand-caption">세종대학교의 모든 것</p>
+    <div class="sidebar-heading">자료 관리</div>
+    <div class="selected-menu">수집 자료 관리</div>
+    <nav aria-label="서비스 이동"><a href="/">챗봇으로 돌아가기 <span aria-hidden="true">↗</span></a></nav>
+    <div class="sidebar-footer"><span class="small-triangle" aria-hidden="true">△</span><p>공식 자료를 확인하고,<br>답변의 근거를 살펴보세요.</p><small>자료를 조회하는 전용 화면입니다.</small></div>
+  </aside>
+  <main class="admin-main">
+    <header class="topbar"><span class="eyebrow">세모 수집 자료</span><a class="mobile-back" href="/">챗봇 ↗</a><span class="readonly">읽기 전용</span></header>
+    <div class="admin-content">
+      <div class="page-heading"><div><h1>수집 자료</h1><p class="intro">학교 소식과 학사안내, 답변에 쓰이는 원문을 확인하세요.</p></div><button id="refresh" class="refresh" type="button">새로고침 ↻</button></div>
+      <p id="load-status" class="load-status" role="status" aria-live="polite">수집 자료를 불러오고 있습니다…</p>
+      <div id="summary" class="summary" aria-label="자료 종류별 건수"></div>
+      <section class="index-summary" aria-label="검색 색인 현황"><div><span id="index-badge" class="badge unknown">확인 중</span><span id="index-message">검색 색인 상태를 확인하고 있습니다.</span></div><p id="index-counts"></p><small id="checked-at"></small></section>
+      <div class="browser-heading"><h2>전체 자료 <span id="total-count">—</span></h2><span class="subtle">제목을 선택하면 본문이 열립니다</span></div>
+      <form id="filters" class="filters" role="search">
+        <div class="search-field"><label class="sr-only" for="search">자료 제목 검색</label><input id="search" type="search" maxlength="200" placeholder="제목으로 자료 찾기" autocomplete="off"></div>
+        <div><label class="sr-only" for="kind">자료 종류</label><select id="kind"><option value="">모든 종류</option><option value="calendar">학사일정</option><option value="academic_guide">학사안내</option><option value="notice">공지사항</option><option value="program">취업·비교과</option></select></div>
+        <div><label class="sr-only" for="index-state">색인 상태</label><select id="index-state"><option value="">모든 색인 상태</option><option value="indexed">색인 완료</option><option value="needs_index">갱신 필요</option><option value="skipped">색인 제외</option><option value="unknown">미확인</option></select></div>
+        <button id="reset" class="text-button" type="button">초기화</button>
+      </form>
+      <div class="document-browser">
+        <section class="document-list" aria-label="수집 자료 목록"><div class="list-caption"><span id="result-count">불러오는 중</span><span>날짜는 한국 시간 기준</span></div><div class="table-scroll"><table class="documents-table"><thead><tr><th scope="col">자료 / 제목</th><th scope="col">일정 · 작성일</th><th scope="col">수집 확인</th><th scope="col">색인</th></tr></thead><tbody id="document-rows"><tr><td colspan="4" class="empty">자료를 불러오고 있습니다…</td></tr></tbody></table></div></section>
+        <section id="detail" class="document-detail" aria-label="선택한 자료 상세" aria-live="polite"><div class="detail-placeholder"><span aria-hidden="true">△</span><h2>원문을 가까이</h2><p>목록에서 자료를 선택하세요.<br>추출한 본문과 표, 공식 출처를<br>한곳에서 확인할 수 있어요.</p></div></section>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

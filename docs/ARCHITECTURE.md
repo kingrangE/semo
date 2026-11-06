@@ -64,3 +64,5 @@ CLI와 웹의 질문 처리는 `Chat.reply`를 통해 같은 경로를 사용합
 취업·비교과의 HTML 파싱은 `adapters/programs.py`, 신청 시각·신선도 기준은 표준 라이브러리만 사용하는 `programs.py`에 있습니다. `runtime.load_programs`가 PostgreSQL 구현을 연결하고 API·CLI·Chat이 같은 기간 필터를 사용합니다. 신규 수집원과 현재 모집 조회의 범위는 [PROGRAMS.md](PROGRAMS.md)를 참고하세요.
 
 공식 상시 학사안내는 `AcademicGuideSource`가 수집하고, 공지와 같은 문단·표 추출기를 사용합니다. 학사일정은 계속 `CalendarSource`에서 별도 문서로 저장합니다. 수집 종류와 실제 DB 확인 절차는 [ACADEMICS.md](ACADEMICS.md)를 참고하세요.
+
+읽기 전용 자료 관리는 `admin_api.py`가 PostgreSQL·Chroma를 조회하고 `admin.py`의 순수 함수로 목록과 색인 상태를 구성합니다. 상태 판정은 실제 청크 ID와 `document_chunks`의 예상 ID를 비교합니다. 상세는 ID를 매개변수로 조회하며, 원문 HTML을 실행하지 않고 `web/admin.js`에서 텍스트/표로 렌더링합니다. 조회 시 PostgreSQL 초기화와 Chroma 컬렉션 생성은 하지 않으며, Chroma가 불가해도 원문은 표시합니다.
