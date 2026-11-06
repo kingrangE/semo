@@ -7,6 +7,7 @@ const send = document.querySelector("#send");
 const clear = document.querySelector("#clear");
 const history = document.querySelector("#history");
 let busy = false;
+let conversation = [];
 
 function message(kind, text) {
   const article = document.createElement("article");
@@ -83,7 +84,7 @@ form.addEventListener("submit", async (event) => {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question, include_history: includeHistory }),
+      body: JSON.stringify({ question, include_history: includeHistory, conversation }),
     });
     let data;
     try { data = await response.json(); } catch { throw new Error("서버 응답을 읽지 못했습니다. 잠시 후 다시 질문해 주세요."); }
@@ -93,6 +94,8 @@ form.addEventListener("submit", async (event) => {
     pending.classList.remove("pending");
     pending.querySelector(".message-text").textContent = data.answer;
     showSources(pending, data.sources, data.as_of);
+    conversation.push({ question, answer: data.answer.slice(0, 6000) });
+    conversation = conversation.slice(-5);
   } catch (error) {
     pending.classList.remove("pending");
     pending.classList.add("error");
@@ -124,6 +127,7 @@ document.querySelectorAll("[data-question]").forEach((button) => {
 clear.addEventListener("click", () => {
   if (busy) return;
   messages.replaceChildren();
+  conversation = [];
   welcome.hidden = false;
   input.value = "";
   input.focus();

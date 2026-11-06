@@ -28,14 +28,16 @@ def create_chat() -> Chat:
 
     model = os.environ.get("OPENAI_CHAT_MODEL") or "gpt-6-luna"
     observe = observer()
+    answerer = OpenAIAnswerer(model, observe)
     return Chat(
         ChromaVectorIndex(
             os.environ.get("CHROMA_HOST", "localhost"),
             int(os.environ.get("CHROMA_PORT", "8000")),
         ),
         OpenAIEmbedder(observe),
-        OpenAIAnswerer(model, observe),
+        answerer,
         model,
         observe,
         load_programs=load_programs,
+        rewrite=answerer.rewrite,
     )

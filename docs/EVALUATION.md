@@ -1,6 +1,6 @@
 # Langfuse 답변 품질 평가
 
-CLI와 웹은 동일한 `Chat.reply`를 사용합니다. Langfuse를 활성화하면 `semo.chat` 아래에 `semo.embed`, `semo.retrieve`, `semo.generate`가 기록됩니다. 검색 청크와 거리·문서 해시, 생성에 전달한 출처, 최종 답변과 인용을 비교해 검색 문제와 생성 문제를 구별할 수 있습니다. 임베딩/생성 토큰 사용량과 모델, 생성 지침·출력 스키마의 해시도 기록합니다. 비용 표시는 Langfuse에 해당 모델 가격이 등록되어 있어야 합니다.
+CLI와 웹은 동일한 `Chat.reply`를 사용합니다. Langfuse를 활성화하면 `semo.chat` 아래에 `semo.embed`, `semo.retrieve`, `semo.generate`가 기록됩니다. 대화 맥락이 있으면 `semo.rewrite`도 기록되며, 검색 단계에서 원래 질문과 재구성한 질문을 비교할 수 있습니다. 검색 청크와 거리·문서 해시, 생성에 전달한 출처, 최종 답변과 인용을 비교해 검색 문제와 생성 문제를 구별할 수 있습니다. 임베딩/생성 토큰 사용량과 모델, 생성 지침·출력 스키마의 해시도 기록합니다. 비용 표시는 Langfuse에 해당 모델 가격이 등록되어 있어야 합니다.
 
 SDK는 `langfuse==5.1.0`을 사용합니다. [공식 추적 문서](https://langfuse.com/docs/observability/sdk/instrumentation)와 [실험 SDK 문서](https://langfuse.com/docs/evaluation/experiments/experiments-via-sdk)를 기준으로 구성했습니다. Cloud 또는 이 SDK와 호환되는 자체 호스팅 Langfuse가 필요합니다. Langfuse 서버 자체는 이 Compose에 추가하지 않습니다.
 
@@ -28,7 +28,7 @@ Langfuse의 Observations/Traces에서 `semo.chat`을 열어 하위 단계를 확
 
 `evals/sejong.json`은 시작용 8문항입니다. 신청 기간·방법, 진행 전/중/후, 학생 접수와 행정 접수 구별, 띄어쓰기, 개인 정보·대상 밖 질문·지시문 공격을 다룹니다. 기대 답변은 대화에서 확인한 공지 내용으로 작성한 초안이며 `seed_requires_human_review`로 표시했습니다. 공식 원문을 사람이 검토한 뒤 기준 데이터로 사용하세요.
 
-각 항목의 `input`은 질문·기준일·선택적인 `include_history`, `expected_output`은 기대 답변·거절 여부·기대 출처 URL입니다. `expected_output.answer`는 사람/LLM 평가용 참고 답변이며 문자열 일치로 자동 채점하지 않습니다.
+각 항목의 `input`은 질문·기준일·선택적인 `include_history` 및 `conversation`(최근 질문·답변 최대 5쌍), `expected_output`은 기대 답변·거절 여부·기대 출처 URL입니다. `expected_output.answer`는 사람/LLM 평가용 참고 답변이며 문자열 일치로 자동 채점하지 않습니다.
 
 외부 호출 없이 데이터 형식만 확인:
 

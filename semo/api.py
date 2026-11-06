@@ -13,9 +13,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from openai import APITimeoutError, RateLimitError
-from pydantic import BaseModel, ConfigDict, StringConstraints
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-from semo.chat import MAX_QUESTION_CHARS, InvalidQuestion, SearchIndexEmpty
+from semo.chat import MAX_QUESTION_CHARS, MAX_CONVERSATION_TURNS, MAX_CONTEXT_ANSWER_CHARS, InvalidQuestion, SearchIndexEmpty
 from semo.runtime import create_chat, load_programs
 from semo.programs import ProgramCatalogUnavailable, open_programs
 from semo.admin_api import router as admin_router
@@ -30,6 +30,12 @@ requests = BoundedSemaphore(2)
 logger = logging.getLogger(__name__)
 
 
+class ConversationTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_CHARS)]
+    answer: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_CONTEXT_ANSWER_CHARS)]
+
+
 class ChatRequest(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     question: Annotated[
@@ -39,6 +45,7 @@ class ChatRequest(BaseModel):
         ),
     ]
     include_history: bool = False
+    conversation: list[ConversationTurn] = Field(default_factory=list, max_length=MAX_CONVERSATION_TURNS)
 
 
 class Source(BaseModel):
@@ -114,7 +121,10 @@ def chat(request: ChatRequest):
         )
     try:
         reference = datetime.now(ZoneInfo("Asia/Seoul")).date()
-        return get_chat().reply(request.question, reference, request.include_history)
+        return get_chat().reply(
+            request.question, reference, request.include_history,
+            conversation=[turn.model_dump() for turn in request.conversation],
+        )
     except InvalidQuestion as error:
         raise HTTPException(400, str(error)) from error
     except SearchIndexEmpty as error:

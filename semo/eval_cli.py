@@ -6,7 +6,7 @@ import json
 from datetime import date
 from pathlib import Path
 
-from semo.chat import MAX_QUESTION_CHARS
+from semo.chat import MAX_QUESTION_CHARS, validate_conversation
 from semo.evaluation import quality_scores
 
 
@@ -24,6 +24,7 @@ def load_dataset(path: Path) -> tuple[list[dict], str]:
             ):
                 raise ValueError("질문은 1~1000자여야 합니다.")
             date.fromisoformat(row["input"]["as_of"])
+            validate_conversation(row["input"].get("conversation"))
             if type(row["input"].get("include_history", False)) is not bool:
                 raise ValueError("include_history는 boolean이어야 합니다.")
             expected = row["expected_output"]
@@ -75,6 +76,7 @@ def main():
         return chat.reply(
             data["question"], date.fromisoformat(data["as_of"]),
             data.get("include_history", False),
+            conversation=data.get("conversation"),
         )
 
     try:
